@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Consulta API</title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ"
+      crossorigin="anonymous"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+      rel="stylesheet"
+    />
+
+    <style>
+      .sidebar {
+        height: 100vh;
+        background-color: #f8f9fa;
+      }
+
+      .content {
+        padding-top: 20px;
+      }
+
+      .loading-icon {
+        font-size: 2rem;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="app" class="container-fluid">
+      <div class="row">
+        <div class="col-2 sidebar">
+          <img src="Menu.png" class="img-fluid" alt="..." />
+          <ul class="nav flex-column">
+            <li class="nav-item">
+              <a class="nav-link" href="#" @click="selectOption('consulta')"
+                >Consulta</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#" @click="selectOption('seguimiento')"
+                >Seguimiento</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#" @click="selectOption('users')"
+                >Usuarios</a
+              >
+            </li>
+          </ul>
+        </div>
+        <div class="col-10 content">
+          <div v-if="selectedOption === 'seguimiento'">
+            <h2>Seguimientos</h2>
+            <div class="col-4">
+              <div class="input-group mb-3">
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Cédula sin guiones ########### "
+                  v-model="cedula"
+                  aria-label="Recipient's username"
+                  aria-describedby="basic-addon2"
+                />
+                <span
+                  class="input-group-text"
+                  id="basic-addon2"
+                  @click="consultar"
+                  :disabled="cedula.length !== 11"
+                >
+                  Consultar
+                </span>
+              </div>
+            </div>
+           
+            <div v-if="loading">
+              <i class="loading-icon fas fa-spinner fa-spin"></i>
+            </div>
+            <div v-else-if="resultado">
+            <!-- Formulario para crear un nuevo seguimiento -->
+            <form @submit.prevent="crearSeguimiento" class="m-3" >
+              
+              <div class="form-group">
+                <label for="nombres"><strong>Nombres:</strong></label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="nombres"
+                  :value="resultado.nombres"
+                  readonly
+                />
+              </div>
+              <div class="form-group">
+                <label for="apellido1"
+                  ><strong>Apellido 1:</strong></label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="apellido1"
+                  :value="resultado.apellido1"
+                  readonly
+                />
+              </div>
+             
+        
+              <div class="form-group">
+                <label for="apellido2"
+                  ><strong>Apellido 2:</strong></label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="apellido2"
+                  :value="resultado.apellido2"
+                  readonly
+                />
+              </div>
+              <div class="form-group">
+                <label for="nivelAceptacion">Nivel de Aceptación:</label>
+                <select v-model="nuevoSeguimiento.nivelAceptacion" class="form-control" id="nivelAceptacion">
+                  <option value="Alto">Alto</option>
+                  <option value="Medio">Medio</option>
+                  <option value="Bajo">Bajo</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="viaContacto">Vía de Contacto:</label>
+                <input type="text" v-model="nuevoSeguimiento.viaContacto" class="form-control" id="viaContacto">
+              </div>
+              <div class="form-group">
+                <label for="comentario">Comentario:</label>
+                <textarea v-model="nuevoSeguimiento.comentario" class="form-control" id="comentario" rows="5"></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary">Guardar</button>
+            </form>
+            </div>
+        <h2>Historial</h2>
+            <!-- Listado de seguimientos -->
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">Nivel de Aceptación</th>
+                  <th scope="col">Vía de Contacto</th>
+                  <th scope="col">Comentario</th>
+                
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="seguimiento in seguimientos" :key="seguimiento.id">
+                  <td>{{ seguimiento.nivelAceptacion }}</td>
+                  <td>{{ seguimiento.viaContacto }}</td>
+                  <td>{{ seguimiento.comentario }}</td>
+                   
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div v-if="selectedOption === 'consulta'">
+            <div class="col-4">
+              <div class="input-group mb-3">
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Cédula sin guiones ########### "
+                  v-model="cedula"
+                  aria-label="Recipient's username"
+                  aria-describedby="basic-addon2"
+                />
+                <span
+                  class="input-group-text"
+                  id="basic-addon2"
+                  @click="consultar"
+                  :disabled="cedula.length !== 11"
+                >
+                  Consultar
+                </span>
+              </div>
+            </div>
+            <div v-if="loading">
+              <i class="loading-icon fas fa-spinner fa-spin"></i>
+            </div>
+            <div v-else-if="resultado">
+              <div class="container">
+                <form>
+                  <div class="row">
+                    <div class="col-md-3">
+                      <div class="form-group">
+                        <label for="provincia"
+                          ><strong>Provincia:</strong></label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="provincia"
+                          :value="resultado.Provincia"
+                          readonly
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label for="municipio"
+                          ><strong>Municipio:</strong></label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="municipio"
+                          :value="resultado.Municipio"
+                          readonly
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label for="codigoCircunscripcion"
+                          ><strong>Código Circunscripción:</strong></label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="codigoCircunscripcion"
+                          :value="resultado.CodigoCircunscripcion"
+                          readonly
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label for="codigoRecinto"
+                          ><strong>Código Recinto:</strong></label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="codigoRecinto"
+                          :value="resultado.CodigoRecinto"
+                          readonly
+                        />
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-group">
+                        <label for="codigoColegio"
+                          ><strong>Código Colegio:</strong></label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="codigoColegio"
+                          :value="resultado.CodigoColegio"
+                          readonly
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label for="cedula"><strong>Cédula:</strong></label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="cedula"
+                          :value="resultado.Cedula"
+                          readonly
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label for="nombres"><strong>Nombres:</strong></label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="nombres"
+                          :value="resultado.nombres"
+                          readonly
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label for="apellido1"
+                          ><strong>Apellido 1:</strong></label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="apellido1"
+                          :value="resultado.apellido1"
+                          readonly
+                        />
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-group">
+                        <label for="apellido2"
+                          ><strong>Apellido 2:</strong></label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="apellido2"
+                          :value="resultado.apellido2"
+                          readonly
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label for="fechaNacimiento"
+                          ><strong>Fecha Nacimiento: Edad {{calcularEdad(resultado.FechaNacimiento)}} </strong></label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="fechaNacimiento"
+                          :value="formatearFecha(resultado.FechaNacimiento)"
+                          readonly
+                        />
+                        
+                      </div>
+                      <div class="form-group">
+                        <label for="sexo"><strong>Sexo:</strong></label>
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="sexo"
+                          :value="resultado.Sexo"
+                          readonly
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label for="estadoCivil"
+                          ><strong>Estado Civil:</strong></label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="estadoCivil"
+                          :value="resultado.IdEstadoCivil"
+                          readonly
+                        />
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-group">
+                        <label for="colegioOrigen"
+                          ><strong>Colegio Origen:</strong></label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="colegioOrigen"
+                          :value="resultado.ColegioOrigen"
+                          readonly
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label for="descripcionColegio"
+                          ><strong>Descripción Colegio:</strong></label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="descripcionColegio"
+                          :value="resultado.DescripcionColegio"
+                          readonly
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label for="Contacto"
+                          ><strong>Telefono:</strong></label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="Contacto"
+                           
+                           
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label for="Email"
+                          ><strong>Email:</strong></label
+                        >
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="Email"
+                           
+                           
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="form-group">
+                      <label for="descripcionColegio"
+                        ><strong>Dirección:</strong></label
+                      >
+                      <textarea class="form-control" id="exampleFormControlTextarea1" rows="3"></textarea>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          <div v-if="selectedOption === 'users'">
+            <div>
+              <h3>Usuarios</h3>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th v-if="false">UserId</th>
+
+                    <th>Activo</th>
+                    <th>Code</th>
+                    <th>Email</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="user in users" :key="user.UserId">
+                    <td v-if="false">{{ user.UserId }}</td>
+
+                    <td>{{ user.Isactive }}</td>
+                    <td>{{ user.Code }}</td>
+                    <td>{{ user.Email }}</td>
+                    <td>
+                      <button
+                        @click="editUser(user)"
+                        class="btn btn-primary btn-sm"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        @click="deleteUser(user.UserId)"
+                        class="btn btn-danger btn-sm"
+                      >
+                        Eliminar
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <div>
+                <h3 v-if="editing">Editar Usuario</h3>
+                <h3 v-else>Agregar Usuario</h3>
+                <div>
+                  <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input
+                      type="text"
+                      id="email"
+                      v-model="form.Email"
+                      class="form-control"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input
+                      type="password"
+                      id="password"
+                      v-model="form.Password"
+                      class="form-control"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="isActive">Activo:</label>
+                    <input
+                      type="checkbox"
+                      id="isActive"
+                      v-model="form.Isactive"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="code">Code:</label>
+                    <input
+                      type="text"
+                      id="code"
+                      v-model="form.Code"
+                      class="form-control"
+                    />
+                  </div>
+
+                  <button @click="saveUser" class="btn btn-primary">
+                    {{ editing ? 'Guardar Cambios' : 'Agregar Usuario' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.7/dist/umd/popper.min.js"></script>
+    <script>
+      // Obtener el token del localStorage
+      var token = localStorage.getItem("token");
+
+      // Mostrar el token en la página
+      document.getElementById("token").textContent = token;
+    </script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.min.js"
+      integrity="sha384-Y4oOpwW3duJdCWv5ly8SCFYWqFDsfob/3GkgExXKV4idmbt98QcxXYs9UoXAB7BZ"
+      crossorigin="anonymous"
+    ></script>
+    <script>
+      new Vue({
+        el: "#app",
+        data: {
+          selectedOption: "consulta",
+          cedula: "",
+          loading: false,
+          resultado: null,
+          users: [],
+          editing: false,
+          form: {
+            UserId: "",
+            Password: "",
+            Isactive: false,
+            Code: "",
+            Email: "",
+          },
+          nuevoSeguimiento: {
+        nivelAceptacion: "",
+        viaContacto: "",
+        comentario: "",
+      },
+      seguimientos: [],
+        },
+        methods: {
+          formatearFecha(fecha) {
+      const fechaObj = new Date(fecha);
+      const dia = fechaObj.getDate() + 1;
+      const mes = fechaObj.getMonth() + 1; // Los meses en JavaScript son base 0
+      const anio = fechaObj.getFullYear();
+
+      // Asegurar que el día y el mes tengan siempre dos dígitos
+      const diaFormateado = dia.toString().padStart(2, '0');
+      const mesFormateado = mes.toString().padStart(2, '0');
+
+      // Crear la cadena en el formato "dd/mm/YYYY"
+      const fechaFormateada = `${diaFormateado}/${mesFormateado}/${anio}`;
+
+      return fechaFormateada;
+    },
+          calcularEdad(fechaNacimiento) {
+      const hoy = new Date();
+      const fechaNac = new Date(fechaNacimiento);
+      let edad = hoy.getFullYear() - fechaNac.getFullYear();
+      const mes = hoy.getMonth() - fechaNac.getMonth();
+
+      if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) {
+        edad--;
+      }
+
+      return edad;
+    },
+          selectOption(option) {
+            this.selectedOption = option;
+            if (option === "users") {
+              this.getUsers();
+            }
+            if (option === "seguimiento") {
+              this.obtenerSeguimientos();
+            }
+          },
+          consultar() {
+            this.loading = true;
+            this.resultado = null;
+            axios
+              .get(`http://50.19.27.158:3000/consulta/${this.cedula}`)
+              .then((response) => {
+                this.resultado = response.data[0];
+                this.loading = false;
+              })
+              .catch((error) => {
+                console.log(error);
+                this.loading = false;
+              });
+          },
+          getUsers() {
+            axios
+              .get("http://50.19.27.158:3000/users")
+              .then((response) => {
+                this.users = response.data;
+              })
+              .catch((error) => {
+                console.log(error);
+              });
+          },
+          editUser(user) {
+            this.editing = true;
+            this.form = {
+              UserId: user.UserId,
+              Password: user.Password,
+              Isactive: user.Isactive,
+              Code: user.Code,
+              Email: user.Email,
+            };
+          },
+          saveUser() {
+            if (this.editing) {
+              axios
+                .put(
+                  `http://50.19.27.158:3000/users/${this.form.UserId}`,
+                  this.form
+                )
+                .then((response) => {
+                  this.getUsers();
+                  this.clearForm();
+                })
+                .catch((error) => {
+                  console.log(error);
+                });
+            } else {
+              axios
+                .post("http://50.19.27.158:3000/users", this.form)
+                .then((response) => {
+                  this.getUsers();
+                  this.clearForm();
+                })
+                .catch((error) => {
+                  console.log(error);
+                });
+            }
+          },
+          deleteUser(userId) {
+            axios
+              .delete(`http://50.19.27.158:3000/users/${userId}`)
+              .then((response) => {
+                this.getUsers();
+              })
+              .catch((error) => {
+                console.log(error);
+              });
+          },
+          clearForm() {
+            this.editing = false;
+            this.form = {
+              UserId: "",
+              Password: "",
+              Isactive: false,
+              Code: "",
+              Email: "",
+            };
+          },
+          obtenerSeguimientos() {
+            console.log("Entro");
+      axios
+        .get("http://localhost:3000/seguimientos")
+        .then((response) => {
+          console.log("Salio",response.data);
+          this.seguimientos = response.data;
+        })
+        .catch((error) => {
+          console.error("Error al obtener los seguimientos:", error);
+        });
+    },
+    crearSeguimiento() {
+      axios
+        .post("http://localhost:3000/seguimientos", this.nuevoSeguimiento)
+        .then((response) => {
+          this.seguimientos.push(response.data);
+          this.nuevoSeguimiento = {
+            nivelAceptacion: "",
+            viaContacto: "",
+            comentario: "",
+          };
+        })
+        .catch((error) => {
+          console.error("Error al crear el seguimiento:", error);
+        });
+    },
+    eliminarSeguimiento(id) {
+      axios
+        .delete(`http://localhost:3000/seguimientos/${id}`)
+        .then(() => {
+          this.seguimientos = this.seguimientos.filter(
+            (seguimiento) => seguimiento.id !== id
+          );
+        })
+        .catch((error) => {
+          console.error("Error al eliminar el seguimiento:", error);
+        });
+    },
+        },
+      });
+    </script>
+  </body>
+</html>
