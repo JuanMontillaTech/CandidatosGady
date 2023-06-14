@@ -506,6 +506,7 @@
       new Vue({
         el: "#app",
         data: {
+          api:"http://50.19.27.158:3000",
           selectedOption: "consulta",
           cedula: "",
           loading: false,
@@ -567,7 +568,7 @@
             this.loading = true;
             this.resultado = null;
             axios
-              .get(`http://50.19.27.158:3000/consulta/${this.cedula}`)
+              .get(`${this.api}/consulta/${this.cedula}`)
               .then((response) => {
                 this.resultado = response.data[0];
                 this.loading = false;
@@ -579,7 +580,7 @@
           },
           getUsers() {
             axios
-              .get("http://50.19.27.158:3000/users")
+              .get(`${this.api}/users`)
               .then((response) => {
                 this.users = response.data;
               })
@@ -601,7 +602,7 @@
             if (this.editing) {
               axios
                 .put(
-                  `http://50.19.27.158:3000/users/${this.form.UserId}`,
+                  `${this.api}/users/${this.form.UserId}`,
                   this.form
                 )
                 .then((response) => {
@@ -613,7 +614,7 @@
                 });
             } else {
               axios
-                .post("http://50.19.27.158:3000/users", this.form)
+                .post(`${this.api}/users`, this.form)
                 .then((response) => {
                   this.getUsers();
                   this.clearForm();
@@ -625,7 +626,7 @@
           },
           deleteUser(userId) {
             axios
-              .delete(`http://50.19.27.158:3000/users/${userId}`)
+              .delete(`${this.api}/users/${userId}`)
               .then((response) => {
                 this.getUsers();
               })
@@ -646,9 +647,9 @@
           obtenerSeguimientos() {
             console.log("Entro");
       axios
-        .get("http://localhost:3000/seguimientos")
+        .get(`${this.api}/seguimientos`)
         .then((response) => {
-          console.log("Salio",response.data);
+
           this.seguimientos = response.data;
         })
         .catch((error) => {
@@ -657,13 +658,14 @@
     },
     crearSeguimiento() {
       axios
-        .post("http://localhost:3000/seguimientos", this.nuevoSeguimiento)
+        .post(`${this.api}/seguimientos`, this.nuevoSeguimiento)
         .then((response) => {
           this.seguimientos.push(response.data);
           this.nuevoSeguimiento = {
             nivelAceptacion: "",
             viaContacto: "",
             comentario: "",
+            Cedula  :this.cedula,
           };
         })
         .catch((error) => {
@@ -672,7 +674,7 @@
     },
     eliminarSeguimiento(id) {
       axios
-        .delete(`http://localhost:3000/seguimientos/${id}`)
+        .delete(`${this.api}/seguimientos/${id}`)
         .then(() => {
           this.seguimientos = this.seguimientos.filter(
             (seguimiento) => seguimiento.id !== id

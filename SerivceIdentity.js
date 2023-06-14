@@ -37,8 +37,8 @@ app.post("/seguimientos", async (req, res) => {
   try {
     await sql.connect(config);
     const result = await sql.query(
-      `INSERT INTO Seguimientos (NivelAceptacion, ViaContacto, Comentario)
-       VALUES ('${nuevoSeguimiento.nivelAceptacion}', '${nuevoSeguimiento.viaContacto}', '${nuevoSeguimiento.comentario}')`
+      `INSERT INTO Seguimientos (NivelAceptacion, ViaContacto, Comentario, Cedula)
+       VALUES ('${nuevoSeguimiento.nivelAceptacion}', '${nuevoSeguimiento.viaContacto}', '${nuevoSeguimiento.comentario}', '${nuevoSeguimiento.Cedula}')`
     );
     res.status(201).json(nuevoSeguimiento);
   } catch (error) {
@@ -53,7 +53,7 @@ app.get("/seguimientos", async (req, res) => {
   try {
     await sql.connect(config);
     const result = await sql.query(
-      "SELECT comentario, nivelAceptacion, viaContacto FROM Seguimientos"
+      "SELECT comentario, nivelAceptacion, viaContacto , Cedula FROM Seguimientos"
     );
     res.json(result.recordset);
   } catch (error) {
